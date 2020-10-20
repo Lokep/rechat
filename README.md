@@ -1,44 +1,94 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# 项目搭建过程
 
-## Available Scripts
+一、`create-react-app`构建`TypeScript`项目
 
-In the project directory, you can run:
+```bash
+  yarn create react-app react-admin-demos --template typescript
+```
+然后我们进入项目并启动
 
-### `npm start`
+```bash
+  cd react-admin-demos/
+  yarn start
+```
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+项目启动成功，浏览器会默认打开http://localhost:3000/，看到官方实例就算成功了。
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+使用`create-app-rewired`对`create-react-app` 进行自定义配置，同时还需要安装`customize-cra`：
 
-### `npm test`
+```bash
+  yarn add react-app-rewired customize-cra
+```
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+修改package.json文件配置：
 
-### `npm run build`
+```json
+"scripts": {
+-   "start": "react-scripts start",
++   "start": "react-app-rewired start",
+-   "build": "react-scripts build",
++   "build": "react-app-rewired build",
+-   "test": "react-scripts test",
++   "test": "react-app-rewired test",
+}
+```
+然后再安装`babel-plugin-import`，是一个按需加载组件和代码样式的babel插件。
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+yarn add babel-plugin-import
+```
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+安装成功后，在根目录下新建config-overrides.js 用于修改默认配置。
+```javascript
+const { 
+    override, 
+    fixBabelImports,
+} = require('customize-cra');
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+// 使用ant-design搭建React+ts项目，可在此重重定义antd全局样式
+  const overConfig  = override(
+    fixBabelImports('import', {
+      libraryName: 'antd',
+      libraryDirectory: 'es',
+      style: 'css',
+    })
+  )
 
-### `npm run eject`
+  module.exports = function (config, env) {
+    return overConfig(config, env)
+  }
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+现在antd的组件的js和css代码都会在项目中按需加载。
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+自定义主题
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+自定义主题需要用到 less 变量覆盖功能。我们可以引入 customize-cra 中提供的 less 相关的函数 addLessLoader 来帮助加载 less 样式，同时修改 config-overrides.js 文件如下。
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```javascript
+- const { override, fixBabelImports } = require('customize-cra');
++ const { override, fixBabelImports, addLessLoader } = require('customize-cra');
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+const overConfig  = override(
+    fixBabelImports('import', {
+        libraryName: 'antd',
+        libraryDirectory: 'es',
+-       style: 'css',
++      style: true,
+    }),
++  addLessLoader({
++     javascriptEnabled: true,
++     modifyVars: { '@primary-color': '#009688' },
++  }),
+);
+```
+
+
+接口代理
+在React中我们使用http-proxy-middleware来解决接口代理的问题
+
+```javascript
+  yarn add http-proxy-middleware
+```
